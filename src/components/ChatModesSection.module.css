@@ -1,0 +1,133 @@
+.chatModes {
+    background: var(--color-bg-secondary);
+}
+
+.header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto var(--space-12);
+}
+
+.title {
+    margin-bottom: var(--space-4);
+}
+
+.subtitle {
+    font-size: var(--text-lg);
+    color: var(--color-text-secondary);
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+@media (min-width: 640px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (min-width: 1024px) {
+    .grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+.modeCard {
+    background: var(--color-white);
+    border-radius: var(--radius-xl);
+    padding: var(--space-8);
+    text-align: center;
+    border: 2px solid transparent;
+    transition: all var(--transition-base);
+    position: relative;
+    overflow: hidden;
+}
+
+.modeCard::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    transition: height var(--transition-base);
+}
+
+.modeCard:hover {
+    transform: translateY(-6px);
+    box-shadow: var(--shadow-lg);
+}
+
+.modeCard:hover::before {
+    height: 6px;
+}
+
+/* Color variants */
+.primary::before {
+    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-primary-light) 100%);
+}
+
+.night::before {
+    background: linear-gradient(90deg, #4A5568 0%, #718096 100%);
+}
+
+.rupture::before {
+    background: linear-gradient(90deg, var(--color-accent-dark) 0%, var(--color-accent) 100%);
+}
+
+.anxiety::before {
+    background: linear-gradient(90deg, #68D391 0%, #9AE6B4 100%);
+}
+
+.spicy::before {
+    background: linear-gradient(90deg, #ED8936 0%, #F6AD55 100%);
+}
+
+.primary:hover {
+    border-color: var(--color-primary-light);
+}
+
+.night:hover {
+    border-color: #718096;
+}
+
+.rupture:hover {
+    border-color: var(--color-accent);
+}
+
+.anxiety:hover {
+    border-color: #9AE6B4;
+}
+
+.spicy:hover {
+    border-color: #F6AD55;
+}
+
+.modeIcon {
+    font-size: 3rem;
+    margin-bottom: var(--space-4);
+}
+
+.modeName {
+    font-size: var(--text-xl);
+    margin-bottom: var(--space-3);
+    color: var(--color-text-primary);
+}
+
+.modeDesc {
+    font-size: var(--text-base);
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+}
+
+.modeDisclaimer {
+    margin-top: var(--space-4);
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    font-style: italic;
+}
