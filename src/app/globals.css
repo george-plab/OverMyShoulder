@@ -11,78 +11,105 @@
 }
 
 :root {
-  /* Colors */
-  --color-bg-primary: #FAF9F7;
-  --color-bg-secondary: #F5F3F0;
-  --color-bg-accent: #EDE8E3;
-  
-  --color-primary: #7C6F9B;
-  --color-primary-light: #A89CC4;
-  --color-primary-dark: #5A4F75;
-  
-  --color-accent: #E8B4B8;
-  --color-accent-light: #F5D5D8;
-  --color-accent-dark: #D4949A;
-  
-  --color-text-primary: #2D2D2D;
-  --color-text-secondary: #6B6B6B;
-  --color-text-muted: #9A9A9A;
-  
-  --color-border: #E5E5E5;
-  --color-border-light: #F0F0F0;
-  
+  /* Colors - OverMyShoulder Brand Palette */
+  --color-bg-primary: #F8FAFC;
+  --color-bg-secondary: #F1F5F9;
+  --color-bg-accent: #E2E8F0;
+
+  --color-primary: #1E4E8C;
+  --color-primary-light: #7AA7C7;
+  --color-primary-dark: #153A6B;
+
+  --color-accent: #F4D06F;
+  --color-accent-light: #F9E4A3;
+  --color-accent-dark: #D4A574;
+
+  --color-text-primary: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+
   --color-white: #FFFFFF;
-  --color-warning: #D4A574;
-  
+  --color-warning: #F4D06F;
+
   /* Typography */
   --font-heading: 'Outfit', sans-serif;
   --font-body: 'Inter', sans-serif;
-  
+
   /* Font Sizes */
-  --text-xs: 0.75rem;    /* 12px */
-  --text-sm: 0.875rem;   /* 14px */
-  --text-base: 1rem;     /* 16px */
-  --text-lg: 1.125rem;   /* 18px */
-  --text-xl: 1.25rem;    /* 20px */
-  --text-2xl: 1.5rem;    /* 24px */
-  --text-3xl: 1.875rem;  /* 30px */
-  --text-4xl: 2.25rem;   /* 36px */
-  --text-5xl: 3rem;      /* 48px */
-  --text-6xl: 3.5rem;    /* 56px */
-  
+  --text-xs: 0.75rem;
+  /* 12px */
+  --text-sm: 0.875rem;
+  /* 14px */
+  --text-base: 1rem;
+  /* 16px */
+  --text-lg: 1.125rem;
+  /* 18px */
+  --text-xl: 1.25rem;
+  /* 20px */
+  --text-2xl: 1.5rem;
+  /* 24px */
+  --text-3xl: 1.875rem;
+  /* 30px */
+  --text-4xl: 2.25rem;
+  /* 36px */
+  --text-5xl: 3rem;
+  /* 48px */
+  --text-6xl: 3.5rem;
+  /* 56px */
+
   /* Spacing */
-  --space-1: 0.25rem;    /* 4px */
-  --space-2: 0.5rem;     /* 8px */
-  --space-3: 0.75rem;    /* 12px */
-  --space-4: 1rem;       /* 16px */
-  --space-5: 1.25rem;    /* 20px */
-  --space-6: 1.5rem;     /* 24px */
-  --space-8: 2rem;       /* 32px */
-  --space-10: 2.5rem;    /* 40px */
-  --space-12: 3rem;      /* 48px */
-  --space-16: 4rem;      /* 64px */
-  --space-20: 5rem;      /* 80px */
-  --space-24: 6rem;      /* 96px */
-  
+  --space-1: 0.25rem;
+  /* 4px */
+  --space-2: 0.5rem;
+  /* 8px */
+  --space-3: 0.75rem;
+  /* 12px */
+  --space-4: 1rem;
+  /* 16px */
+  --space-5: 1.25rem;
+  /* 20px */
+  --space-6: 1.5rem;
+  /* 24px */
+  --space-8: 2rem;
+  /* 32px */
+  --space-10: 2.5rem;
+  /* 40px */
+  --space-12: 3rem;
+  /* 48px */
+  --space-16: 4rem;
+  /* 64px */
+  --space-20: 5rem;
+  /* 80px */
+  --space-24: 6rem;
+  /* 96px */
+
   /* Border Radius */
-  --radius-sm: 0.375rem;   /* 6px */
-  --radius-md: 0.5rem;     /* 8px */
-  --radius-lg: 0.75rem;    /* 12px */
-  --radius-xl: 1rem;       /* 16px */
-  --radius-2xl: 1.5rem;    /* 24px */
+  --radius-sm: 0.375rem;
+  /* 6px */
+  --radius-md: 0.5rem;
+  /* 8px */
+  --radius-lg: 0.75rem;
+  /* 12px */
+  --radius-xl: 1rem;
+  /* 16px */
+  --radius-2xl: 1.5rem;
+  /* 24px */
   --radius-full: 9999px;
-  
+
   /* Shadows */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.06);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
   --shadow-xl: 0 16px 48px rgba(0, 0, 0, 0.1);
-  
+
   /* Transitions */
   --transition-fast: 150ms ease;
   --transition-base: 250ms ease;
   --transition-slow: 400ms ease;
-  
+
   /* Container */
   --container-max: 1200px;
   --container-padding: var(--space-6);
@@ -105,7 +132,12 @@ body {
 }
 
 /* Typography */
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
   font-weight: 500;
   line-height: 1.2;
@@ -159,15 +191,15 @@ a:hover {
   .section {
     padding: var(--space-20) 0;
   }
-  
+
   h1 {
     font-size: var(--text-6xl);
   }
-  
+
   h2 {
     font-size: var(--text-4xl);
   }
-  
+
   h3 {
     font-size: var(--text-3xl);
   }
@@ -264,6 +296,7 @@ a:hover {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -274,15 +307,19 @@ a:hover {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.7;
   }
@@ -317,7 +354,7 @@ a:hover {
   .hide-mobile {
     display: block;
   }
-  
+
   .hide-desktop {
     display: none;
   }

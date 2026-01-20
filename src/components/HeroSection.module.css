@@ -4,6 +4,8 @@
     display: flex;
     align-items: center;
     padding: var(--space-16) 0;
+    padding-top: calc(var(--space-16) + 72px);
+    /* Compensate for sticky header */
     overflow: hidden;
 }
 
@@ -14,8 +16,8 @@
     width: 80%;
     height: 150%;
     background: radial-gradient(circle,
-            rgba(168, 156, 196, 0.15) 0%,
-            rgba(232, 180, 184, 0.08) 40%,
+            rgba(122, 167, 199, 0.15) 0%,
+            rgba(244, 208, 111, 0.08) 40%,
             transparent 70%);
     pointer-events: none;
     z-index: 0;
