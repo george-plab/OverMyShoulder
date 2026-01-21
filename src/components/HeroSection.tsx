@@ -30,7 +30,7 @@ export default function HeroSection() {
                     </p>
 
                     <div className={styles.ctas}>
-                        <a href="#app" className="btn btn-primary btn-large">
+                        <a href="/onboarding" className="btn btn-primary btn-large">
                             Empieza a hablar ahora
                         </a>
                         <button

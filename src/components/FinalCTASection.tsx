@@ -2,17 +2,28 @@
 
 import { useState } from "react";
 import styles from "./FinalCTASection.module.css";
+import { submitWaitlist } from "@/api/waitlist";
 
 export default function FinalCTASection() {
     const [email, setEmail] = useState("");
     const [isSubmitted, setIsSubmitted] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (email) {
+        setErrorMsg(null);
+
+        if (!email) return;
+
+        try {
+            setIsLoading(true);
+            await submitWaitlist(email);
             setIsSubmitted(true);
-            // Here you would typically send to your backend/email service
-            console.log("Waitlist signup:", email);
+        } catch (err: any) {
+            setErrorMsg(err?.message || "No se pudo apuntar a la waitlist");
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -42,10 +53,21 @@ export default function FinalCTASection() {
                                 onChange={(e) => setEmail(e.target.value)}
                                 className={styles.emailInput}
                                 required
+                                disabled={isLoading}
                             />
-                            <button type="submit" className="btn btn-primary btn-large">
-                                Únete a la waitlist
+                            <button
+                                type="submit"
+                                className="btn btn-primary btn-large"
+                                disabled={isLoading}
+                                style={{ opacity: isLoading ? 0.7 : 1 }}
+                            >
+                                {isLoading ? "Enviando..." : "Únete a la waitlist"}
                             </button>
+                            {errorMsg && (
+                                <p style={{ color: "#dc2626", marginTop: "0.75rem", fontSize: "0.9rem" }}>
+                                    {errorMsg}
+                                </p>
+                            )}
                         </form>
                     ) : (
                         <div className={styles.successMessage}>

@@ -1,0 +1,190 @@
+.chat-input-container {
+    padding: 20px 24px 24px;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.input-wrapper {
+    display: flex;
+    align-items: flex-end;
+    gap: 12px;
+    max-width: 720px;
+    margin: 0 auto;
+    /* Fondo más suave y translúcido */
+    background: rgba(255, 255, 255, 0.06);
+    /* Bordes más redondeados */
+    border-radius: 28px;
+    padding: 10px 10px 10px 22px;
+    box-shadow: 0 2px 16px rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.input-wrapper:focus-within {
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.12);
+}
+
+.chat-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 15px;
+    font-family: inherit;
+    resize: none;
+    max-height: 120px;
+    min-height: 24px;
+    line-height: 24px;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.9);
+    letter-spacing: 0.2px;
+}
+
+.chat-input::placeholder {
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 400;
+}
+
+.chat-input:disabled {
+    opacity: 0.5;
+}
+
+.send-button {
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: none;
+    /* Gradiente más calmado */
+    background: linear-gradient(145deg, rgba(120, 140, 200, 0.5) 0%, rgba(140, 120, 180, 0.45) 100%);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.4;
+    transform: scale(0.94);
+}
+
+.send-button.active {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.send-button:hover:not(:disabled) {
+    transform: scale(1.04);
+    box-shadow: 0 4px 18px rgba(120, 140, 200, 0.25);
+}
+
+.send-button:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.send-button:disabled {
+    cursor: not-allowed;
+}
+
+.send-button svg {
+    width: 18px;
+    height: 18px;
+    opacity: 0.9;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .chat-input-container {
+        padding: 16px 16px 20px;
+    }
+
+    .input-wrapper {
+        border-radius: 24px;
+        padding: 8px 8px 8px 18px;
+    }
+
+    .send-button {
+        width: 40px;
+        height: 40px;
+    }
+
+    .privacy-note {
+        padding: 0 16px;
+    }
+
+    .privacy-text {
+        font-size: 10px;
+    }
+}
+
+/* Privacy Note */
+.privacy-note {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+    animation: fadeIn 0.6s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.privacy-icon {
+    font-size: 11px;
+    opacity: 0.5;
+}
+
+.privacy-text {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.35);
+    font-weight: 400;
+    letter-spacing: 0.2px;
+}
+
+.privacy-info {
+    font-size: 11px;
+    opacity: 0.4;
+    cursor: help;
+    position: relative;
+    transition: opacity 0.3s ease;
+}
+
+.privacy-info:hover {
+    opacity: 0.7;
+}
+
+/* Custom tooltip styling via title attribute enhancement */
+.privacy-info::after {
+    content: attr(title);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    background: rgba(30, 35, 50, 0.95);
+    color: rgba(255, 255, 255, 0.85);
+    padding: 10px 14px;
+    border-radius: 12px;
+    font-size: 12px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    pointer-events: none;
+    z-index: 100;
+}
+
+.privacy-info:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(-4px);
+}
