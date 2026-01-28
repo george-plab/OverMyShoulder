@@ -10,7 +10,7 @@ const CHAT_HISTORY_KEY = "oms_chat_history";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 // API function to send message
-interface Settings {
+interface Setting {
     mode: string;
     emotionalState: string;
     tone: string;
@@ -24,18 +24,18 @@ interface HistoryItem {
 async function sendMessage(
     message: string,
     history: HistoryItem[],
-    settings: Settings,
-    useLocal: boolean = true
+    setting: Setting,
+    use_local: boolean = true
 ) {
     const payload = {
         message,
         history,
         setting: {
-            mode: settings.mode || "default",
-            emotionalState: settings.emotionalState || "",
-            tone: settings.tone || "",
+            mode: setting.mode || "default",
+            emotionalState: setting.emotionalState || "",
+            tone: setting.tone || "",
         },
-        use_local: useLocal,
+        use_local: use_local,
     };
 
     console.log("CHAT PAYLOAD:", payload);
@@ -46,15 +46,13 @@ async function sendMessage(
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
     });
-
     const text = await res.text();
+    let data: any = {};
+    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
     console.log("CHAT STATUS:", res.status, "CHAT BODY:", text);
-
-    const data = JSON.parse(text);
-    if (!res.ok) {
-        throw new Error(data?.detail || "Error en /api/chat");
-    }
+    if (!res.ok) throw new Error(data?.detail || data?.raw || "Error en /api/chat");
     return data;
+
 }
 
 // Mode configuration
@@ -93,6 +91,7 @@ interface Message {
     text: string;
     isUser: boolean;
     timestamp: string;
+    isError?: boolean;
 }
 
 interface ChatViewProps {
@@ -101,12 +100,14 @@ interface ChatViewProps {
     tone?: string;
 }
 
-// Helper to convert messages to API history format
+// Helper to convert messages to API history format (filters out error messages)
 function messagesToHistory(messages: Message[]): HistoryItem[] {
-    return messages.map((msg) => ({
-        role: msg.isUser ? "user" : "assistant",
-        content: msg.text,
-    }));
+    return messages
+        .filter((msg) => !msg.isError)
+        .map((msg) => ({
+            role: msg.isUser ? "user" : "assistant",
+            content: msg.text,
+        }));
 }
 
 // Load chat history from localStorage
@@ -122,13 +123,37 @@ function loadChatHistory(): Message[] | null {
     return null;
 }
 
-// Save chat history to localStorage
+// Save chat history to localStorage (filters out error messages)
 function saveChatHistory(messages: Message[]) {
     try {
-        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messages));
+        const messagesToSave = messages.filter((msg) => !msg.isError);
+        localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messagesToSave));
     } catch (e) {
         console.warn("Could not save chat history:", e);
     }
+}
+
+// Clear chat history from localStorage and reset state
+function clearAllChatData() {
+    const keysToRemove = [
+        CHAT_HISTORY_KEY,
+        "oms_user_preferences",
+        // Fallback keys in case they exist
+        "chatMessages",
+        "messages",
+        "chat_history",
+        "history",
+        "oms_chat",
+        "oms_history",
+        "OverMyShoulder_chat"
+    ];
+    keysToRemove.forEach(key => {
+        try {
+            localStorage.removeItem(key);
+        } catch (e) {
+            console.warn(`Could not remove ${key}:`, e);
+        }
+    });
 }
 
 export default function ChatView({ mode = "default", emotionalState = "", tone = "" }: ChatViewProps) {
@@ -156,6 +181,25 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
     const [useLocal, setUseLocal] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    // Clear chat history handler
+    const handleClearChat = () => {
+        const confirmed = window.confirm(
+            "¿Seguro que quieres borrar el chat? Esto eliminará el historial en este dispositivo."
+        );
+        if (confirmed) {
+            clearAllChatData();
+            // Reset to initial welcome message
+            setMessages([
+                {
+                    id: Date.now(),
+                    text: getRandomInitialMessage(mode),
+                    isUser: false,
+                    timestamp: formatTime(new Date()),
+                },
+            ]);
+        }
+    };
+
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     };
@@ -171,36 +215,52 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
         }
     }, [messages]);
 
-    const handleSend = async (text: string) => {
+
+    //Handle send message
+    const handleSend = async (message: string) => {
         const userMessage: Message = {
             id: Date.now(),
-            text,
+            text: message,
             isUser: true,
             timestamp: formatTime(new Date()),
         };
 
-        const updatedMessages = [...messages, userMessage];
-        setMessages(updatedMessages);
+        const updatedMsg = [...messages, userMessage];
+        setMessages(updatedMsg);
+        //setMessages(messages);
         setIsLoading(true);
 
         try {
             // Build settings from ChatViewProps
-            const settings = { mode, emotionalState, tone };
+            const setting = { mode, emotionalState, tone };
 
             // Build history from all messages (excluding the just-added user message for the request)
-            const history = messagesToHistory(messages);
+            const history = messagesToHistory(updatedMsg);
 
             // Use the sendMessage function from api.js
-            const response = await sendMessage(text, history, settings, useLocal);
+            //const response = await sendMessage(text, history, settings, useLocal);
+            const data = await sendMessage(message, history, setting, useLocal);
+            console.log("CHAT RESPONSE FIELD:", data?.response);
 
-            const botMessage: Message = {
+
+            const assistantMsg: Message = {
                 id: Date.now() + 1,
-                text: response.response || response.message || config.errorMessage,
+                text: data.response || data.message || config.errorMessage,
                 isUser: false,
                 timestamp: formatTime(new Date()),
             };
 
-            setMessages((prev) => [...prev, botMessage]);
+            // Add assistant message, filtering out previous error messages
+            console.log("MESSAGES AFTER SET (next):", updatedMsg?.length);
+            setMessages((prev) => {
+                const cleaned = prev.filter(m => !m.isError);
+                return [...cleaned, assistantMsg];
+            });
+
+
+            console.log("MESSAGES AFTER SET (next):", messages?.length);
+
+
         } catch (error) {
             console.error("Error sending message:", error);
 
@@ -209,11 +269,14 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
                 text: `⚠️ ${config.errorMessage}`,
                 isUser: false,
                 timestamp: formatTime(new Date()),
+                isError: true,
             };
 
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
+
             setIsLoading(false);
+
         }
     };
 
@@ -266,6 +329,16 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
                 disabled={isLoading}
                 placeholder={config.placeholder}
             />
+
+            {/* Clear Chat Button */}
+            <button
+                className="clear-chat-btn"
+                onClick={handleClearChat}
+                title="El chat se guarda solo en la memoria local de tu dispositivo. Si lo borras aquí, desaparece de este navegador."
+                aria-label="Borrar chat"
+            >
+                🗑️ Borrar chat
+            </button>
         </div>
     );
 }

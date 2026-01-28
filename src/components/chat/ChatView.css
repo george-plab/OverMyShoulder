@@ -126,7 +126,8 @@
 }
 
 .toggle-local input:checked+.toggle-slider {
-    background: linear-gradient(145deg, rgba(120, 140, 200, 0.5) 0%, rgba(140, 120, 180, 0.45) 100%);
+    background: linear-gradient(145deg, #4a80c9 0%, #5a70b9 100%);
+    border-color: rgba(100, 160, 220, 0.5);
 }
 
 .toggle-local input:checked+.toggle-slider::after {
@@ -191,4 +192,42 @@
     .chat-messages {
         padding: 24px 0;
     }
+
+    .clear-chat-btn {
+        bottom: 80px;
+        left: 12px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+}
+
+/* Clear Chat Button */
+.clear-chat-btn {
+    position: fixed;
+    bottom: 100px;
+    left: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.6);
+    padding: 8px 14px;
+    font-size: 12px;
+    font-weight: 400;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(12px);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    z-index: 100;
+}
+
+.clear-chat-btn:hover {
+    background: rgba(255, 255, 255, 0.12);
+    color: rgba(255, 255, 255, 0.85);
+    border-color: rgba(255, 255, 255, 0.18);
+}
+
+.clear-chat-btn:active {
+    transform: scale(0.97);
 }

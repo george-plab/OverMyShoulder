@@ -1,4 +1,5 @@
 
+
 // lib/api/waitlist.ts
 import { apiFetch } from "./client";
 

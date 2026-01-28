@@ -8,8 +8,8 @@ const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
  */
 export const createSettings = ({ mode, emotionalState, tone }) => ({
   mode: mode || 'default',
-  emotionalState: emotionalState || '',
-  tone: tone || '',
+  emotionalState: emotionalState || 'sad',
+  tone: tone || 'suave',
 });
 
 
