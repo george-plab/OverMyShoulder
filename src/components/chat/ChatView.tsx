@@ -1,12 +1,14 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 import "./ChatView.css";
 
 const CHAT_HISTORY_KEY = "oms_chat_history";
+const COUNT_MSG_KEY = "oms_count_msg";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 // API function to send message
@@ -94,6 +96,7 @@ interface Message {
     isError?: boolean;
 }
 
+
 interface ChatViewProps {
     mode?: string;
     emotionalState?: string;
@@ -126,26 +129,55 @@ function loadChatHistory(): Message[] | null {
 // Save chat history to localStorage (filters out error messages)
 function saveChatHistory(messages: Message[]) {
     try {
-        const messagesToSave = messages.filter((msg) => !msg.isError);
+        const messagesToSave = messages.filter((msg) => !msg.isError)
         localStorage.setItem(CHAT_HISTORY_KEY, JSON.stringify(messagesToSave));
     } catch (e) {
         console.warn("Could not save chat history:", e);
     }
 }
 
+
+function saveMsgCount(userChatLength: number) {
+    try {
+        //const msgCount = messages.filter((msg) => !msg.isError).length;
+        localStorage.setItem(COUNT_MSG_KEY, userChatLength.toString());
+    } catch (e) {
+        console.warn("Could not save chat history:", e);
+    }
+}
+
+function loadMsgCount(): number {
+    try {
+        const stored = localStorage.getItem(COUNT_MSG_KEY);
+        if (stored) {
+            return Number(stored)//(JSON.parse(stored));
+        }
+    } catch (e) {
+        console.warn("Could not load chat history:", e);
+        return 0;
+    }
+    return 0;
+}
+
+// Beta Mode: Limit user messages per session
+const MAX_USER_MESSAGES = 4; // Para testing, cambiar a 10 en producción
+
+
+
 // Clear chat history from localStorage and reset state
 function clearAllChatData() {
     const keysToRemove = [
         CHAT_HISTORY_KEY,
-        "oms_user_preferences",
+        COUNT_MSG_KEY, // Añadido para borrar el contador de mensajes Añade setMsgCount(0); en handleClearChat() 
+        "oms_user_preferences",                
         // Fallback keys in case they exist
         "chatMessages",
         "messages",
         "chat_history",
         "history",
-        "oms_chat",
-        "oms_history",
-        "OverMyShoulder_chat"
+        //"oms_chat",
+        //"oms_history",
+        //"OverMyShoulder_chat"
     ];
     keysToRemove.forEach(key => {
         try {
@@ -178,17 +210,32 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
         ];
     });
     const [isLoading, setIsLoading] = useState(false);
-    const [useLocal, setUseLocal] = useState(false);
+    const useLocal = false; // Fixed value, toggle removed for users
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const router = useRouter();
 
-    // Clear chat history handler
+    // Estado para el contador de mensajes del usuario (persistido en localStorage)
+    const [userMsgCount, setUserMsgCount] = useState<number>(() => {
+        if (typeof window !== "undefined") {
+            return loadMsgCount();
+        }
+        return 0;
+    });
+
+    // Check if limit reached for CTA styling
+    const limitReached = userMsgCount >= MAX_USER_MESSAGES;
+
+    // Clear chat history handler (NO resetea el contador de mensajes)
     const handleClearChat = () => {
         const confirmed = window.confirm(
-            "¿Seguro que quieres borrar el chat? Esto eliminará el historial en este dispositivo."
+            "¿Seguro que quieres borrar el chat? Esto eliminará el historial en este dispositivo, pero el límite de mensajes se mantiene."
         );
         if (confirmed) {
-            clearAllChatData();
-            // Reset to initial welcome message
+            clearAllChatData(); 
+            // Reset contador de mensajes y mensaje inicial
+            // añade COUNT_MSG_KEY en clearAllChatData,
+            //así setUserMsgCount(0) persiste el contador de mensajes a cero  ; 
+            setUserMsgCount(0);
             setMessages([
                 {
                     id: Date.now(),
@@ -211,13 +258,39 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
     // Save messages to localStorage whenever they change
     useEffect(() => {
         if (messages.length > 0) {
+            // Guardar historial de chat en localStorage (sin el contador)
             saveChatHistory(messages);
         }
     }, [messages]);
 
+    // Sincronizar contador de mensajes con localStorage cuando cambia
+    useEffect(() => {
+        saveMsgCount(userMsgCount);
+        console.log("Contador de mensajes del usuario:", userMsgCount);
+    }, [userMsgCount]);
+
 
     //Handle send message
     const handleSend = async (message: string) => {
+        // Beta Mode: Check if user has reached the message limit
+        console.log("Mensajes del usuario:", userMsgCount);
+
+        if (userMsgCount >= MAX_USER_MESSAGES) {
+            const betaLimitMsg: Message = {
+                id: Date.now(),
+                text: `🧪 Beta: has alcanzado el máximo de ${MAX_USER_MESSAGES} mensajes por sesión.\nÚnete a la waitlist para acceso ampliado.`,
+                isUser: false,
+                timestamp: formatTime(new Date()),
+                isError: true,
+            };
+            setMessages(prev => [...prev, betaLimitMsg]);
+            return;
+        }
+
+        // Incrementar contador de mensajes del usuario ANTES de enviar
+        const newCount = userMsgCount + 1;
+        setUserMsgCount(newCount);
+
         const userMessage: Message = {
             id: Date.now(),
             text: message,
@@ -261,12 +334,18 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
             console.log("MESSAGES AFTER SET (next):", messages?.length);
 
 
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error sending message:", error);
+
+            // Check if it's a 429 rate limit error
+            const is429 = error?.message?.includes("429") || error?.status === 429;
+            const errorText = is429
+                ? "🧪 Beta: has alcanzado el máximo de 10 mensajes por sesión. Únete a la waitlist para acceso ampliado."
+                : `⚠️ ${config.errorMessage}`;
 
             const errorMessage: Message = {
                 id: Date.now() + 1,
-                text: `⚠️ ${config.errorMessage}`,
+                text: errorText,
                 isUser: false,
                 timestamp: formatTime(new Date()),
                 isError: true,
@@ -297,15 +376,14 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
                     </div>
                 </div>
                 <div className="header-actions">
-                    <label className="toggle-local">
-                        <input
-                            type="checkbox"
-                            checked={useLocal}
-                            onChange={(e) => setUseLocal(e.target.checked)}
-                        />
-                        <span className="toggle-slider"></span>
-                        <span className="toggle-label">Local</span>
-                    </label>
+                    <span className="beta-indicator">🧪 BETA · Máx. {MAX_USER_MESSAGES} mensajes por sesión</span>
+                    <span className="message-counter">Mensajes: {userMsgCount} / {MAX_USER_MESSAGES}</span>
+                    <button
+                        className={`btn ${limitReached ? "btn-primary" : "btn-secondary"}`}
+                        onClick={() => router.push("/#waitlist")}
+                    >
+                        {limitReached ? "Únete a la waitlist" : "Waitlist"}
+                    </button>
                 </div>
             </header>
 
@@ -326,8 +404,8 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
             {/* Input Area */}
             <ChatInput
                 onSend={handleSend}
-                disabled={isLoading}
-                placeholder={config.placeholder}
+                disabled={isLoading || limitReached}
+                placeholder={limitReached ? `🧪 Beta: has alcanzado el máximo de ${MAX_USER_MESSAGES} mensajes por sesión. Únete a la waitlist para acceso ampliado.` : config.placeholder}
             />
 
             {/* Clear Chat Button */}

@@ -58,6 +58,7 @@ export default function Header() {
                             {item.label}
                         </button>
                     ))}
+                    <span className={styles.betaIndicator}>🧪 BETA · Máx. 10 mensajes por sesión</span>
                     <button
                         className={styles.waitlistBtn}
                         onClick={() => scrollToSection("waitlist")}

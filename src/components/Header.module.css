@@ -96,6 +96,15 @@
     box-shadow: var(--shadow-md);
 }
 
+.betaIndicator {
+    font-size: var(--text-xs);
+    color: var(--color-text-secondary);
+    background: rgba(30, 78, 140, 0.08);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-full);
+    font-weight: 500;
+}
+
 /* Mobile Menu Button */
 .mobileMenuBtn {
     display: none;

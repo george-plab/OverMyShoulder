@@ -34,6 +34,12 @@ export default function HeroSection() {
                             Empieza a hablar ahora
                         </a>
                         <button
+                            onClick={() => scrollToSection("waitlist")}
+                            className="btn btn-primary btn-medium"
+                        >
+                            Apuntate a la lista de espera
+                        </button>
+                        <button
                             onClick={() => scrollToSection("como-funciona")}
                             className="btn btn-secondary"
                         >

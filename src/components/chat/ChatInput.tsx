@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./ChatInput.css";
 
 interface ChatInputProps {
@@ -15,6 +15,15 @@ const ChatInput = ({
     placeholder = "Escribe lo que necesites decir...",
 }: ChatInputProps) => {
     const [message, setMessage] = useState("");
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        }
+    }, [message]);
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
@@ -35,6 +44,7 @@ const ChatInput = ({
         <form className="chat-input-container" onSubmit={handleSubmit}>
             <div className="input-wrapper">
                 <textarea
+                    ref={textareaRef}
                     className="chat-input"
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
