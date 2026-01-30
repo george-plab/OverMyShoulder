@@ -14,7 +14,8 @@ export class ApiError extends Error {
 
 // Next.js carga automáticamente .env.local (dev) y .env.production (prod)
 // desde la raíz del proyecto. No necesitas dotenv.
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
+console.log("API_BASE_URL", API_BASE);
 
 if (!API_BASE) {
     console.warn("NEXT_PUBLIC_API_BASE_URL is not set. Check your .env.local file in the project root.");
