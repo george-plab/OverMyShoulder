@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 
 const inter = Inter({
@@ -59,7 +60,10 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body style={{ fontFamily: "var(--font-body)" }}>{children}</body>
+      <body style={{ fontFamily: "var(--font-body)" }}>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
