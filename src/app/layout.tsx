@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
+import { AuthProvider } from "@/providers/AuthProvider";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -59,7 +60,9 @@ export default function RootLayout({
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </head>
-      <body style={{ fontFamily: "var(--font-body)" }}>{children}</body>
+      <body style={{ fontFamily: "var(--font-body)" }}>
+        <AuthProvider>{children}</AuthProvider>
+      </body>
     </html>
   );
 }

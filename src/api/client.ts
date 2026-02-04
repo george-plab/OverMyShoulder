@@ -25,7 +25,11 @@ export async function apiFetch<T>(
     path: string,
     init?: RequestInit
 ): Promise<T> {
+    console.log("API_BASE_URL", API_BASE);
+    
     const url = `${API_BASE}${path}`;
+
+    console.log("API_URL", url);
 
     const res = await fetch(url, {
         ...init,

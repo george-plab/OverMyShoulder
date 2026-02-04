@@ -90,6 +90,30 @@
     margin-left: var(--space-2);
 }
 
+.authBtn {
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    color: var(--color-primary);
+    background: transparent;
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    font-family: var(--font-body);
+}
+
+.authBtn:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+}
+
+.googleButton {
+    display: flex;
+    align-items: center;
+    margin-left: var(--space-2);
+}
+
 .waitlistBtn:hover {
     background: var(--color-primary-dark);
     transform: translateY(-1px);
@@ -160,6 +184,16 @@
         margin-left: 0;
         margin-top: var(--space-2);
         padding: var(--space-3) var(--space-4);
+    }
+
+    .navMobile .authBtn {
+        width: 100%;
+        margin-top: var(--space-2);
+    }
+
+    .navMobile .googleButton {
+        margin-left: 0;
+        margin-top: var(--space-2);
     }
 }
 

@@ -3,10 +3,13 @@
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import styles from "./Header.module.css";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import { useAuth } from "@/providers/AuthProvider";
 
 export default function Header() {
     const [isScrolled, setIsScrolled] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const { user, logout, isLoading } = useAuth();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -59,6 +62,16 @@ export default function Header() {
                         </button>
                     ))}
                     <span className={styles.betaIndicator}>🧪 BETA · Máx. 10 mensajes por sesión</span>
+                    {!isLoading && !user && (
+                        <div className={styles.googleButton}>
+                            <GoogleSignInButton />
+                        </div>
+                    )}
+                    {!isLoading && user && (
+                        <button className={styles.authBtn} onClick={logout}>
+                            Cerrar sesión
+                        </button>
+                    )}
                     <button
                         className={styles.waitlistBtn}
                         onClick={() => scrollToSection("waitlist")}
@@ -91,6 +104,16 @@ export default function Header() {
                             {item.label}
                         </button>
                     ))}
+                    {!isLoading && !user && (
+                        <div className={styles.googleButton}>
+                            <GoogleSignInButton />
+                        </div>
+                    )}
+                    {!isLoading && user && (
+                        <button className={styles.authBtn} onClick={logout}>
+                            Cerrar sesión
+                        </button>
+                    )}
                     <button
                         className={styles.waitlistBtn}
                         onClick={() => scrollToSection("waitlist")}

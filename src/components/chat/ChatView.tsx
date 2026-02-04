@@ -6,34 +6,27 @@ import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 import "./ChatView.css";
+import { Setting, HistoryItem, chat } from "@/api/chat";
+import { useAuth } from "@/providers/AuthProvider";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 const CHAT_HISTORY_KEY = "oms_chat_history";
 const COUNT_MSG_KEY = "oms_count_msg";
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
-// API function to send message
-interface Setting {
-    mode: string;
-    emotionalState: string;
-    tone: string;
-}
 
-interface HistoryItem {
-    role: "user" | "assistant";
-    content: string;
-}
 
 async function sendMessage(
     message: string,
     history: HistoryItem[],
     setting: Setting,
-    use_local: boolean = true
+    use_local: boolean = false
 ) {
     const payload = {
         message,
         history,
         setting: {
-            mode: setting.mode || "default",
+            //mode: setting.mode || "default",Deprecated
             emotionalState: setting.emotionalState || "",
             tone: setting.tone || "",
         },
@@ -43,6 +36,7 @@ async function sendMessage(
     console.log("CHAT PAYLOAD:", payload);
     console.log("CHAT PAYLOAD JSON:", JSON.stringify(payload));
 
+    //const text = await chat(message, history, setting, use_local);
     const res = await fetch(`${API_BASE}/api/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -71,12 +65,13 @@ const modeConfig = {
     },
 };
 
+// DEPRECATED
 function getModeConfig(mode = "default") {
     return modeConfig[mode as keyof typeof modeConfig] || modeConfig.default;
 }
 
 function getRandomInitialMessage(mode = "default") {
-    const config = getModeConfig(mode);
+    const config = getModeConfig(); // DEPRECATED   
     const messages = config.initialMessages;
     return messages[Math.floor(Math.random() * messages.length)];
 }
@@ -98,7 +93,7 @@ interface Message {
 
 
 interface ChatViewProps {
-    mode?: string;
+    //mode?: string; // DEPRECATED
     emotionalState?: string;
     tone?: string;
 }
@@ -160,7 +155,7 @@ function loadMsgCount(): number {
 }
 
 // Beta Mode: Limit user messages per session
-const MAX_USER_MESSAGES = 4; // Para testing, cambiar a 10 en producción
+const MAX_USER_MESSAGES = 10; // Para testing, cambiar a 10 en producción
 
 
 
@@ -169,7 +164,7 @@ function clearAllChatData() {
     const keysToRemove = [
         CHAT_HISTORY_KEY,
         COUNT_MSG_KEY, // Añadido para borrar el contador de mensajes Añade setMsgCount(0); en handleClearChat() 
-        "oms_user_preferences",                
+        "oms_user_preferences",
         // Fallback keys in case they exist
         "chatMessages",
         "messages",
@@ -188,8 +183,10 @@ function clearAllChatData() {
     });
 }
 
-export default function ChatView({ mode = "default", emotionalState = "", tone = "" }: ChatViewProps) {
-    const config = getModeConfig(mode);
+export default function ChatView({// mode = "default", DEprecated
+    emotionalState = "", tone = "" }: ChatViewProps) {
+    const config = getModeConfig();//mode = "default", DEprecated
+    const { user, logout, isLoading: isAuthLoading } = useAuth();
 
     // Initialize with stored history or default welcome message
     const [messages, setMessages] = useState<Message[]>(() => {
@@ -203,13 +200,14 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
         return [
             {
                 id: 1,
-                text: getRandomInitialMessage(mode),
+                text: getRandomInitialMessage(),
                 isUser: false,
                 timestamp: formatTime(new Date()),
             },
         ];
     });
-    const [isLoading, setIsLoading] = useState(false);
+    //const [isLoading, setIsLoading] = useState(false);
+    const [isSending, setIsSending] = useState(false);
     const useLocal = false; // Fixed value, toggle removed for users
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const router = useRouter();
@@ -231,7 +229,7 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
             "¿Seguro que quieres borrar el chat? Esto eliminará el historial en este dispositivo, pero el límite de mensajes se mantiene."
         );
         if (confirmed) {
-            clearAllChatData(); 
+            clearAllChatData();
             // Reset contador de mensajes y mensaje inicial
             // añade COUNT_MSG_KEY en clearAllChatData,
             //así setUserMsgCount(0) persiste el contador de mensajes a cero  ; 
@@ -239,7 +237,7 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
             setMessages([
                 {
                     id: Date.now(),
-                    text: getRandomInitialMessage(mode),
+                    text: getRandomInitialMessage(),
                     isUser: false,
                     timestamp: formatTime(new Date()),
                 },
@@ -253,7 +251,7 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
 
     useEffect(() => {
         scrollToBottom();
-    }, [messages, isLoading]);
+    }, [messages, isSending]);
 
     // Save messages to localStorage whenever they change
     useEffect(() => {
@@ -301,11 +299,13 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
         const updatedMsg = [...messages, userMessage];
         setMessages(updatedMsg);
         //setMessages(messages);
-        setIsLoading(true);
+        setIsSending(true);
 
         try {
             // Build settings from ChatViewProps
-            const setting = { mode, emotionalState, tone };
+            const setting = { //mode,deprecated 
+                emotionalState, tone
+            };
 
             // Build history from all messages (excluding the just-added user message for the request)
             const history = messagesToHistory(updatedMsg);
@@ -354,7 +354,7 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
 
-            setIsLoading(false);
+            setIsSending(false);
 
         }
     };
@@ -378,6 +378,14 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
                 <div className="header-actions">
                     <span className="beta-indicator">🧪 BETA · Máx. {MAX_USER_MESSAGES} mensajes por sesión</span>
                     <span className="message-counter">Mensajes: {userMsgCount} / {MAX_USER_MESSAGES}</span>
+                    {!isAuthLoading && !user && (
+                        <GoogleSignInButton />
+                    )}
+                    {!isAuthLoading && user && (
+                        <button className="logout-btn" onClick={logout}>
+                            Cerrar sesión
+                        </button>
+                    )}
                     <button
                         className={`btn ${limitReached ? "btn-primary" : "btn-secondary"}`}
                         onClick={() => router.push("/#waitlist")}
@@ -397,14 +405,14 @@ export default function ChatView({ mode = "default", emotionalState = "", tone =
                         timestamp={msg.timestamp}
                     />
                 ))}
-                {isLoading && <TypingIndicator />}
+                {isSending && <TypingIndicator />}
                 <div ref={messagesEndRef} />
             </main>
 
             {/* Input Area */}
             <ChatInput
                 onSend={handleSend}
-                disabled={isLoading || limitReached}
+                disabled={isSending || limitReached}
                 placeholder={limitReached ? `🧪 Beta: has alcanzado el máximo de ${MAX_USER_MESSAGES} mensajes por sesión. Únete a la waitlist para acceso ampliado.` : config.placeholder}
             />
 
