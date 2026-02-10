@@ -6,50 +6,15 @@ import ChatMessage from "./ChatMessage";
 import ChatInput from "./ChatInput";
 import TypingIndicator from "./TypingIndicator";
 import "./ChatView.css";
-import { Setting, HistoryItem, chat } from "@/api/chat";
+import { HistoryItem } from "@/api/chat";
+import { apiChat, PaywallError, PaywallReason } from "@/api/auth";
 import { useAuth } from "@/providers/AuthProvider";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+import PaywallModal from "@/components/PaywallModal";
 
 const CHAT_HISTORY_KEY = "oms_chat_history";
 const COUNT_MSG_KEY = "oms_count_msg";
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
 
 
-
-async function sendMessage(
-    message: string,
-    history: HistoryItem[],
-    setting: Setting,
-    use_local: boolean = false
-) {
-    const payload = {
-        message,
-        history,
-        setting: {
-            //mode: setting.mode || "default",Deprecated
-            emotionalState: setting.emotionalState || "",
-            tone: setting.tone || "",
-        },
-        use_local: use_local,
-    };
-
-    console.log("CHAT PAYLOAD:", payload);
-    console.log("CHAT PAYLOAD JSON:", JSON.stringify(payload));
-
-    //const text = await chat(message, history, setting, use_local);
-    const res = await fetch(`${API_BASE}/api/chat`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-    });
-    const text = await res.text();
-    let data: any = {};
-    try { data = text ? JSON.parse(text) : {}; } catch { data = { raw: text }; }
-    console.log("CHAT STATUS:", res.status, "CHAT BODY:", text);
-    if (!res.ok) throw new Error(data?.detail || data?.raw || "Error en /api/chat");
-    return data;
-
-}
 
 // Mode configuration
 const modeConfig = {
@@ -154,9 +119,6 @@ function loadMsgCount(): number {
     return 0;
 }
 
-// Beta Mode: Limit user messages per session
-const MAX_USER_MESSAGES = 10; // Para testing, cambiar a 10 en producción
-
 
 
 // Clear chat history from localStorage and reset state
@@ -186,7 +148,10 @@ function clearAllChatData() {
 export default function ChatView({// mode = "default", DEprecated
     emotionalState = "", tone = "" }: ChatViewProps) {
     const config = getModeConfig();//mode = "default", DEprecated
-    const { user, logout, isLoading: isAuthLoading } = useAuth();
+    const { user, isAuthenticated, maxMessages, logout, isLoading: isAuthLoading, refreshPolicy } = useAuth();
+
+    // Modal state for paywall/login prompt with reason
+    const [paywallReason, setPaywallReason] = useState<PaywallReason | "LOGIN" | null>(null);
 
     // Initialize with stored history or default welcome message
     const [messages, setMessages] = useState<Message[]>(() => {
@@ -221,7 +186,19 @@ export default function ChatView({// mode = "default", DEprecated
     });
 
     // Check if limit reached for CTA styling
-    const limitReached = userMsgCount >= MAX_USER_MESSAGES;
+    const limitReached = userMsgCount >= maxMessages;
+
+    // Handle login button click
+    const handleLoginClick = () => {
+        setPaywallReason("LOGIN");
+    };
+
+    // Effect to close modal when auth changes
+    useEffect(() => {
+        if (isAuthenticated && paywallReason) {
+            setPaywallReason(null);
+        }
+    }, [isAuthenticated, paywallReason]);
 
     // Clear chat history handler (NO resetea el contador de mensajes)
     const handleClearChat = () => {
@@ -270,22 +247,14 @@ export default function ChatView({// mode = "default", DEprecated
 
     //Handle send message
     const handleSend = async (message: string) => {
-        // Beta Mode: Check if user has reached the message limit
-        console.log("Mensajes del usuario:", userMsgCount);
-
-        if (userMsgCount >= MAX_USER_MESSAGES) {
-            const betaLimitMsg: Message = {
-                id: Date.now(),
-                text: `🧪 Beta: has alcanzado el máximo de ${MAX_USER_MESSAGES} mensajes por sesión.\nÚnete a la waitlist para acceso ampliado.`,
-                isUser: false,
-                timestamp: formatTime(new Date()),
-                isError: true,
-            };
-            setMessages(prev => [...prev, betaLimitMsg]);
+        // Check if user has reached the message limit
+        if (userMsgCount >= maxMessages) {
+            // Show appropriate paywall modal
+            setPaywallReason(isAuthenticated ? "AUTH_LIMIT_REACHED" : "ANON_LIMIT_REACHED");
             return;
         }
 
-        // Incrementar contador de mensajes del usuario ANTES de enviar
+        // Increment counter BEFORE sending
         const newCount = userMsgCount + 1;
         setUserMsgCount(newCount);
 
@@ -298,54 +267,52 @@ export default function ChatView({// mode = "default", DEprecated
 
         const updatedMsg = [...messages, userMessage];
         setMessages(updatedMsg);
-        //setMessages(messages);
         setIsSending(true);
 
         try {
-            // Build settings from ChatViewProps
-            const setting = { //mode,deprecated 
-                emotionalState, tone
-            };
-
-            // Build history from all messages (excluding the just-added user message for the request)
+            // Build history from all messages
             const history = messagesToHistory(updatedMsg);
 
-            // Use the sendMessage function from api.js
-            //const response = await sendMessage(text, history, settings, useLocal);
-            const data = await sendMessage(message, history, setting, useLocal);
-            console.log("CHAT RESPONSE FIELD:", data?.response);
-
+            // Use apiChat from auth.ts
+            const data = await apiChat({
+                message,
+                history,
+                setting: { emotionalState, tone },
+                use_local: false,
+            });
 
             const assistantMsg: Message = {
                 id: Date.now() + 1,
-                text: data.response || data.message || config.errorMessage,
+                text: data.response || config.errorMessage,
                 isUser: false,
                 timestamp: formatTime(new Date()),
             };
 
             // Add assistant message, filtering out previous error messages
-            console.log("MESSAGES AFTER SET (next):", updatedMsg?.length);
             setMessages((prev) => {
                 const cleaned = prev.filter(m => !m.isError);
                 return [...cleaned, assistantMsg];
             });
 
-
-            console.log("MESSAGES AFTER SET (next):", messages?.length);
-
-
         } catch (error: any) {
             console.error("Error sending message:", error);
 
-            // Check if it's a 429 rate limit error
-            const is429 = error?.message?.includes("429") || error?.status === 429;
-            const errorText = is429
-                ? "🧪 Beta: has alcanzado el máximo de 10 mensajes por sesión. Únete a la waitlist para acceso ampliado."
-                : `⚠️ ${config.errorMessage}`;
+            // Handle PaywallError - show modal with reason
+            if (error instanceof PaywallError || error?.status === 402) {
+                // Decrement the counter since the message wasn't processed
+                setUserMsgCount(prev => Math.max(0, prev - 1));
+                // Remove the user message from UI
+                setMessages(prev => prev.filter(m => m.id !== userMessage.id));
+                // Show paywall modal with appropriate reason
+                const reason = error?.detail?.reason || (isAuthenticated ? "AUTH_LIMIT_REACHED" : "ANON_LIMIT_REACHED");
+                setPaywallReason(reason);
+                return;
+            }
 
+            // Generic error handling
             const errorMessage: Message = {
                 id: Date.now() + 1,
-                text: errorText,
+                text: `⚠️ ${config.errorMessage}`,
                 isUser: false,
                 timestamp: formatTime(new Date()),
                 isError: true,
@@ -353,9 +320,7 @@ export default function ChatView({// mode = "default", DEprecated
 
             setMessages((prev) => [...prev, errorMessage]);
         } finally {
-
             setIsSending(false);
-
         }
     };
 
@@ -376,10 +341,15 @@ export default function ChatView({// mode = "default", DEprecated
                     </div>
                 </div>
                 <div className="header-actions">
-                    <span className="beta-indicator">🧪 BETA · Máx. {MAX_USER_MESSAGES} mensajes por sesión</span>
-                    <span className="message-counter">Mensajes: {userMsgCount} / {MAX_USER_MESSAGES}</span>
+                    <span className="beta-indicator">🧪 BETA</span>
+                    <span className="message-counter">
+                        {userMsgCount} / {maxMessages} mensajes
+                        {!isAuthenticated && <span className="login-hint"> · Inicia sesión → 100</span>}
+                    </span>
                     {!isAuthLoading && !user && (
-                        <GoogleSignInButton />
+                        <button className="login-btn" onClick={handleLoginClick}>
+                            Iniciar sesión
+                        </button>
                     )}
                     {!isAuthLoading && user && (
                         <button className="logout-btn" onClick={logout}>
@@ -413,7 +383,7 @@ export default function ChatView({// mode = "default", DEprecated
             <ChatInput
                 onSend={handleSend}
                 disabled={isSending || limitReached}
-                placeholder={limitReached ? `🧪 Beta: has alcanzado el máximo de ${MAX_USER_MESSAGES} mensajes por sesión. Únete a la waitlist para acceso ampliado.` : config.placeholder}
+                placeholder={limitReached ? `🧪 Has alcanzado el máximo de ${maxMessages} mensajes por sesión. ${isAuthenticated ? 'Únete a la waitlist para acceso ampliado.' : 'Inicia sesión para continuar.'}` : config.placeholder}
             />
 
             {/* Clear Chat Button */}
@@ -425,6 +395,13 @@ export default function ChatView({// mode = "default", DEprecated
             >
                 🗑️ Borrar chat
             </button>
+
+            {/* Paywall Modal */}
+            <PaywallModal
+                open={paywallReason !== null}
+                onClose={() => setPaywallReason(null)}
+                reason={paywallReason || "LOGIN"}
+            />
         </div>
     );
 }

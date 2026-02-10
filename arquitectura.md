@@ -66,6 +66,7 @@ Wizard de 3 pasos con indicador de progreso:
 | `ChatMessage.tsx` | Burbuja de mensaje |
 | `ChatInput.tsx` | Campo de entrada |
 | `TypingIndicator.tsx` | Indicador "escribiendo..." |
+| `PaywallModal.tsx` | Modal de login/paywall |
 
 ### Estado en `localStorage`
 | Clave | Contenido |
@@ -74,10 +75,12 @@ Wizard de 3 pasos con indicador de progreso:
 | `oms_count_msg` | Contador de mensajes del usuario |
 | `oms_user_preferences` | `{ emotionalState, tone }` |
 
-### Beta Mode
-- Límite: **10 mensajes** por sesión (`MAX_USER_MESSAGES`)
-- Contador visible en header
-- Al alcanzar límite: input deshabilitado + CTA a waitlist
+### Sistema de Límites de Mensajes
+- **Anónimo**: 10 mensajes (`ANON_MAX_MESSAGES`)
+- **Autenticado**: 100 mensajes (`AUTH_MAX_MESSAGES`)
+- Header: botón "Iniciar sesión" o "Cerrar sesión"
+- Contador: `X / Y mensajes` + hint para anónimos
+- Al límite: `PaywallModal` con mensajes según razón
 
 ---
 
@@ -96,12 +99,20 @@ NEXT_PUBLIC_API_BASE_URL=https://pythonbackend-production-d3ea.up.railway.app
 
 | Endpoint | Método | Payload | Respuesta |
 |----------|--------|---------|-----------|
-| `/api/chat` | POST | `{ message, history, setting, use_local }` | `{ response }` |
+| `/api/me` | GET | - | `{ ok, user }` o 401 |
+| `/api/auth/google` | POST | `{ credential }` | `{ user }` |
+| `/api/logout` | POST | - | - |
+| `/api/chat` | POST | `{ message, history, setting, use_local }` | `{ response }` o 402 PAYWALL |
 | `/api/waitlist` | POST | `{ email }` | `{ ok: boolean }` |
 
-### Cliente HTTP (`src/api/client.ts`)
-- `apiFetch<T>()` — wrapper genérico con manejo de errores
-- Lanza `ApiError` si `!res.ok`
+### Cliente HTTP (`src/api/`)
+
+| Archivo | Función |
+|---------|---------|
+| `client.ts` | `apiFetch<T>()` wrapper genérico, `ApiError` |
+| `auth.ts` | `apiMe()`, `apiLogin()`, `apiLogout()`, `apiChat()`, `PaywallError` |
+| `chat.ts` | Tipos: `Setting`, `HistoryItem` |
+| `waitlist.ts` | `joinWaitlist()` |
 
 ---
 

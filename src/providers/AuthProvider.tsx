@@ -1,104 +1,98 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, useCallback } from "react";
 import { usePathname, useRouter } from "next/navigation";
-
-type User = {
-  sub?: string;
-  email?: string;
-  name?: string;
-  picture?: string;
-};
+import { apiPolicy, apiLogin, apiLogout, User, PolicyResponse } from "@/api/auth";
 
 type AuthContextValue = {
-  user: User | null;
-  isLoading: boolean;
-  refresh: () => Promise<void>;
-  loginWithGoogle: (credential: string) => Promise<void>;
-  logout: () => Promise<void>;
+    user: User | null;
+    isAuthenticated: boolean;
+    isLoading: boolean;
+    maxMessages: number;
+    refreshPolicy: () => Promise<void>;
+    loginWithGoogle: (credential: string) => Promise<void>;
+    logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000";
-
-async function fetchMe(): Promise<User | null> {
-  const res = await fetch(`${API_BASE}/api/me`, {
-    method: "GET",
-    credentials: "include",
-  });
-  if (!res.ok) {
-    return null;
-  }
-  const data = await res.json();
-  return data?.user ?? null;
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
-  const pathname = usePathname();
+    const [user, setUser] = useState<User | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
+    const [maxMessages, setMaxMessages] = useState(10); // Default fallback
+    const [isLoading, setIsLoading] = useState(true);
+    const router = useRouter();
+    const pathname = usePathname();
 
-  const refresh = async () => {
-    setIsLoading(true);
-    try {
-      const me = await fetchMe();
-      setUser(me);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    // Fetch policy from server and update state
+    const refreshPolicy = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const policy = await apiPolicy();
+            setIsAuthenticated(policy.isAuthenticated);
+            setMaxMessages(policy.maxMessages);
+            setUser(policy.user ?? null);
+        } catch (error) {
+            console.error("Error fetching policy:", error);
+            // Keep defaults on error
+            setIsAuthenticated(false);
+            setMaxMessages(10);
+            setUser(null);
+        } finally {
+            setIsLoading(false);
+        }
+    }, []);
 
-  const loginWithGoogle = async (credential: string) => {
-    const res = await fetch(`${API_BASE}/api/auth/google`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      credentials: "include",
-      body: JSON.stringify({ credential }),
-    });
-    if (!res.ok) {
-      throw new Error("Login failed");
-    }
-    const data = await res.json();
-    setUser(data?.user ?? null);
-  };
+    const loginWithGoogle = useCallback(async (credential: string) => {
+        await apiLogin(credential);
+        // Refresh policy to get updated maxMessages
+        await refreshPolicy();
+    }, [refreshPolicy]);
 
-  const logout = async () => {
-    await fetch(`${API_BASE}/api/logout`, {
-      method: "POST",
-      credentials: "include",
-    });
-    setUser(null);
-  };
+    const logout = useCallback(async () => {
+        await apiLogout();
+        // Refresh policy to get anonymous limits
+        await refreshPolicy();
+    }, [refreshPolicy]);
 
-  useEffect(() => {
-    refresh();
-  }, []);
+    // Fetch policy on mount
+    useEffect(() => {
+        refreshPolicy();
+    }, [refreshPolicy]);
 
-  useEffect(() => {
-    if (isLoading) return;
-    if (user) return;
-    if (!pathname) return;
+    // Protect routes
+    useEffect(() => {
+        if (isLoading) return;
+        if (isAuthenticated) return;
+        if (!pathname) return;
 
-    const protectedPrefixes = ["/analysis", "/admin"];
-    const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-    if (isProtected && pathname !== "/start" && pathname !== "/login") {
-      router.replace("/start");
-    }
-  }, [isLoading, user, pathname, router]);
+        const protectedPrefixes = ["/analysis", "/admin"];
+        const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
+        if (isProtected && pathname !== "/start" && pathname !== "/login") {
+            router.replace("/start");
+        }
+    }, [isLoading, isAuthenticated, pathname, router]);
 
-  const value = useMemo<AuthContextValue>(
-    () => ({ user, isLoading, refresh, loginWithGoogle, logout }),
-    [user, isLoading]
-  );
+    const value = useMemo<AuthContextValue>(
+        () => ({
+            user,
+            isAuthenticated,
+            isLoading,
+            maxMessages,
+            refreshPolicy,
+            loginWithGoogle,
+            logout,
+        }),
+        [user, isAuthenticated, isLoading, maxMessages, refreshPolicy, loginWithGoogle, logout]
+    );
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return ctx;
+    const ctx = useContext(AuthContext);
+    if (!ctx) {
+        throw new Error("useAuth must be used within AuthProvider");
+    }
+    return ctx;
 }

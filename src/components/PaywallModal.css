@@ -1,0 +1,122 @@
+/* PaywallModal Overlay */
+.paywall-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: paywallFadeIn 0.2s ease-out;
+}
+
+@keyframes paywallFadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+/* PaywallModal Card */
+.paywall-modal-card {
+    position: relative;
+    background: linear-gradient(145deg, rgba(40, 45, 65, 0.95) 0%, rgba(30, 35, 50, 0.98) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 32px 40px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+    animation: paywallSlideUp 0.2s ease-out;
+}
+
+@keyframes paywallSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.paywall-modal-close {
+    position: absolute;
+    top: 12px;
+    right: 16px;
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, 0.5);
+    font-size: 24px;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+    transition: color 0.2s ease;
+}
+
+.paywall-modal-close:hover {
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.paywall-modal-title {
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+    margin-bottom: 12px;
+    letter-spacing: 0.2px;
+}
+
+.paywall-modal-text {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.6);
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.paywall-modal-button {
+    display: flex;
+    justify-content: center;
+}
+
+.paywall-modal-waitlist {
+    padding: 12px 24px;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: linear-gradient(145deg, rgba(100, 120, 200, 0.3) 0%, rgba(80, 100, 180, 0.25) 100%);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.paywall-modal-waitlist:hover {
+    background: linear-gradient(145deg, rgba(100, 120, 200, 0.4) 0%, rgba(80, 100, 180, 0.35) 100%);
+    border-color: rgba(255, 255, 255, 0.35);
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .paywall-modal-card {
+        padding: 24px 20px;
+        margin: 16px;
+    }
+
+    .paywall-modal-title {
+        font-size: 18px;
+    }
+
+    .paywall-modal-text {
+        font-size: 13px;
+    }
+}
